@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>BR30 WALA TRADER - Trading Journal</title>
+
+<style>
+
+*{
+    box-sizing:border-box;
+    margin:0;
+    padding:0;
+}
+
+body{
+    font-family:Arial,sans-serif;
+    background:#f2f4f7;
+    padding:15px;
+    color:#111;
+}
+
+.container{
+    max-width:1100px;
+    margin:auto;
+}
+
+h1{
+    text-align:center;
+    font-size:32px;
+    margin:15px 0 25px;
+}
+
+.dashboard{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:12px;
+}
+
+.card{
+    background:white;
+    padding:18px;
+    border-radius:15px;
+    text-align:center;
+    box-shadow:0 3px 10px rgba(0,0,0,.08);
+}
+
+.card h3{
+    font-size:16px;
+    margin-bottom:10px;
+}
+
+.card p{
+    font-size:25px;
+    font-weight:bold;
+}
+
+.form-box,
+.table-box,
+.backup-box{
+    background:white;
+    padding:20px;
+    border-radius:15px;
+    margin-top:20px;
+    box-shadow:0 3px 10px rgba(0,0,0,.08);
+}
+
+h2{
+    margin-bottom:18px;
+}
+
+.form-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:15px;
+}
+
+label{
+    font-weight:bold;
+}
+
+input,
+select,
+textarea{
+    width:100%;
+    padding:13px;
+    margin-top:6px;
+    border:1px solid #ccc;
+    border-radius:8px;
+    font-size:16px;
+}
+
+textarea{
+    resize:vertical;
+}
+
+button{
+    border:none;
+    padding:12px 17px;
+    border-radius:8px;
+    cursor:pointer;
+    font-weight:bold;
+    margin-top:12px;
+}
+
+.add-btn{
+    background:#111;
+    color:white;
+}
+
+.backup-btn{
+    background:#1769ff;
+    color:white;
+    margin-right:5px;
+}
+
+.restore-btn{
+    background:#008f4c;
+    color:white;
+}
+
+.edit-btn{
+    background:#ff9800;
+    color:white;
+    margin-right:5px;
+}
+
+.delete-btn{
+    background:#e53935;
+    color:white;
+}
+
+.cancel-btn{
+    background:#777;
+    color:white;
+}
+
+.win{
+    color:green;
+    font-weight:bold;
+}
+
+.loss{
+    color:red;
+    font-weight:bold;
+}
+
+table{
+    width:100%;
+    border-collapse:collapse;
+    margin-top:15px;
+    min-width:750px;
+}
+
+.table-scroll{
+    overflow-x:auto;
+}
+
+th{
+    background:#111;
+    color:white;
+    padding:12px;
+}
+
+td{
+    padding:11px;
+    border-bottom:1px solid #ddd;
+    text-align:center;
+}
+
+#restoreFile{
+    display:none;
+}
+
+@media(max-width:700px){
+
+    .form-grid{
+        grid-template-columns:1fr;
+    }
+
+    h1{
+        font-size:28px;
+    }
+
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+<h1>📈 BR30 WALA TRADER<br>Trading Journal</h1>
+
+
+<!-- DASHBOARD -->
+
+<div class="dashboard">
+
+<div class="card">
+<h3>Total Trades</h3>
+<p id="totalTrades">0</p>
+</div>
+
+<div class="card">
+<h3>Winning Trades</h3>
+<p id="winningTrades">0</p>
+</div>
+
+<div class="card">
+<h3>Losing Trades</h3>
+<p id="losingTrades">0</p>
+</div>
+
+<div class="card">
+<h3>Win Rate</h3>
+<p id="winRate">0%</p>
+</div>
+
+<div class="card">
+<h3>Total P&L</h3>
+<p id="totalPL">₹0.00</p>
+</div>
+
+</div>
+
+
+<!-- ADD TRADE -->
+
+<div class="form-box">
+
+<h2 id="formTitle">➕ Add New Trade</h2>
+
+<div class="form-grid">
+
+<div>
+<label>Date</label>
+<input type="date" id="date">
+</div>
+
+<div>
+<label>Stock / Index</label>
+<input type="text" id="symbol" placeholder="NIFTY">
+</div>
+
+<div>
+<label>Trade Type</label>
+<select id="type">
+<option value="BUY">BUY</option>
+<option value="SELL">SELL</option>
+</select>
+</div>
+
+<div>
+<label>Entry Price</label>
+<input type="number" id="entry" placeholder="100">
+</div>
+
+<div>
+<label>Exit Price</label>
+<input type="number" id="exit" placeholder="120">
+</div>
+
+<div>
+<label>Quantity</label>
+<input type="number" id="quantity" placeholder="50">
+</div>
+
+</div>
+
+<br>
+
+<label>Strategy / Notes</label>
+
+<textarea
+id="notes"
+rows="3"
+placeholder="Breakout, Support, Resistance..."
+></textarea>
+
+<br>
+
+<button class="add-btn" onclick="saveTrade()" id="saveButton">
+➕ Add Trade
+</button>
+
+<button
+class="cancel-btn"
+onclick="cancelEdit()"
+id="cancelButton"
+style="display:none;"
+>
+Cancel
+</button>
+
+</div>
+
+
+<!-- BACKUP -->
+
+<div class="backup-box">
+
+<h2>🔐 Backup & Restore</h2>
+
+<p>
+अपने सभी trades की backup file बनाकर सुरक्षित रखें।
+</p>
+
+<button class="backup-btn" onclick="backupTrades()">
+📤 Backup Trades
+</button>
+
+<button class="restore-btn" onclick="document.getElementById('restoreFile').click()">
+📥 Restore Trades
+</button>
+
+<input
+type="file"
+id="restoreFile"
+accept=".json"
+onchange="restoreTrades(event)"
+>
+
+</div>
+
+
+<!-- TRADE HISTORY -->
+
+<div class="table-box">
+
+<h2>📋 Trade History</h2>
+
+<div class="table-scroll">
+
+<table>
+
+<thead>
+
+<tr>
+<th>Date</th>
+<th>Symbol</th>
+<th>Type</th>
+<th>Entry</th>
+<th>Exit</th>
+<th>Qty</th>
+<th>P&L</th>
+<th>Action</th>
+</tr>
+
+</thead>
+
+<tbody id="tradeTable"></tbody>
+
+</table>
+
+</div>
+
+</div>
+
+</div>
+
+
+<script>
+
+let trades =
+JSON.parse(localStorage.getItem("trades")) || [];
+
+let editingId = null;
+
+
+// SAVE TRADE
+
+function saveTrade(){
+
+let date =
+document.getElementById("date").value;
+
+let symbol =
+document.getElementById("symbol").value.trim();
+
+let type =
+document.getElementById("type").value;
+
+let entry =
+Number(document.getElementById("entry").value);
+
+let exit =
+Number(document.getElementById("exit").value);
+
+let quantity =
+Number(document.getElementById("quantity").value);
+
+let notes =
+document.getElementById("notes").value.trim();
+
+
+if(
+!date ||
+!symbol ||
+!entry ||
+!exit ||
+!quantity
+){
+
+alert("कृपया सभी जरूरी जानकारी भरें।");
+
+return;
+
+}
+
+
+let pl;
+
+if(type === "BUY"){
+
+pl = (exit - entry) * quantity;
+
+}else{
+
+pl = (entry - exit) * quantity;
+
+}
+
+
+// EDIT
+
+if(editingId !== null){
+
+let trade =
+trades.find(t => t.id === editingId);
+
+trade.date = date;
+trade.symbol = symbol;
+trade.type = type;
+trade.entry = entry;
+trade.exit = exit;
+trade.quantity = quantity;
+trade.pl = pl;
+trade.notes = notes;
+
+editingId = null;
+
+document.getElementById("saveButton").innerText =
+"➕ Add Trade";
+
+document.getElementById("formTitle").innerText =
+"➕ Add New Trade";
+
+document.getElementById("cancelButton").style.display =
+"none";
+
+}else{
+
+let trade = {
+
+id:Date.now(),
+
+date:date,
+
+symbol:symbol,
+
+type:type,
+
+entry:entry,
+
+exit:exit,
+
+quantity:quantity,
+
+pl:pl,
+
+notes:notes
+
+};
+
+trades.push(trade);
+
+}
+
+
+saveData();
+
+clearForm();
+
+displayTrades();
+
+}
+
+
+// SAVE DATA
+
+function saveData(){
+
+localStorage.setItem(
+"trades",
+JSON.stringify(trades)
+);
+
+}
+
+
+// CLEAR FORM
+
+function clearForm(){
+
+document.getElementById("date").value = "";
+
+document.getElementById("symbol").value = "";
+
+document.getElementById("entry").value = "";
+
+document.getElementById("exit").value = "";
+
+document.getElementById("quantity").value = "";
+
+document.getElementById("notes").value = "";
+
+}
+
+
+// DISPLAY
+
+function displayTrades(){
+
+let table =
+document.getElementById("tradeTable");
+
+table.innerHTML = "";
+
+
+trades.forEach(function(trade){
+
+let row =
+document.createElement("tr");
+
+let plClass =
+trade.pl >= 0 ? "win" : "loss";
+
+
+row.innerHTML = `
+
+<td>${trade.date}</td>
+
+<td>${trade.symbol}</td>
+
+<td>${trade.type}</td>
+
+<td>₹${trade.entry}</td>
+
+<td>₹${trade.exit}</td>
+
+<td>${trade.quantity}</td>
+
+<td class="${plClass}">
+₹${trade.pl.toFixed(2)}
+</td>
+
+<td>
+
+<button
+class="edit-btn"
+onclick="editTrade(${trade.id})"
+>
+✏️ Edit
+</button>
+
+<button
+class="delete-btn"
+onclick="deleteTrade(${trade.id})"
+>
+🗑️ Delete
+</button>
+
+</td>
+
+`;
+
+table.appendChild(row);
+
+});
+
+
+updateDashboard();
+
+}
+
+
+// EDIT TRADE
+
+function editTrade(id){
+
+let trade =
+trades.find(t => t.id === id);
+
+if(!trade) return;
+
+
+document.getElementById("date").value =
+trade.date;
+
+document.getElementById("symbol").value =
+trade.symbol;
+
+document.getElementById("type").value =
+trade.type;
+
+document.getElementById("entry").value =
+trade.entry;
+
+document.getElementById("exit").value =
+trade.exit;
+
+document.getElementById("quantity").value =
+trade.quantity;
+
+document.getElementById("notes").value =
+trade.notes || "";
+
+
+editingId = id;
+
+
+document.getElementById("saveButton").innerText =
+"💾 Update Trade";
+
+document.getElementById("formTitle").innerText =
+"✏️ Edit Trade";
+
+document.getElementById("cancelButton").style.display =
+"inline-block";
+
+
+window.scrollTo({
+top:0,
+behavior:"smooth"
+});
+
+}
+
+
+// CANCEL EDIT
+
+function cancelEdit(){
+
+editingId = null;
+
+clearForm();
+
+document.getElementById("saveButton").innerText =
+"➕ Add Trade";
+
+document.getElementById("formTitle").innerText =
+"➕ Add New Trade";
+
+document.getElementById("cancelButton").style.display =
+"none";
+
+}
+
+
+// DELETE
+
+function deleteTrade(id){
+
+if(!confirm("क्या आप यह trade delete करना चाहते हैं?")){
+
+return;
+
+}
+
+
+trades =
+trades.filter(function(trade){
+
+return trade.id !== id;
+
+});
+
+
+saveData();
+
+displayTrades();
+
+}
+
+
+// DASHBOARD
+
+function updateDashboard(){
+
+let total =
+trades.length;
+
+let winning =
+trades.filter(
+trade => trade.pl > 0
+).length;
+
+let losing =
+trades.filter(
+trade => trade.pl < 0
+).length;
+
+let totalPL =
+trades.reduce(
+(sum,trade) => sum + trade.pl,
+0
+);
+
+let winRate =
+total > 0
+? (winning / total) * 100
+: 0;
+
+
+document.getElementById("totalTrades").innerText =
+total;
+
+document.getElementById("winningTrades").innerText =
+winning;
+
+document.getElementById("losingTrades").innerText =
+losing;
+
+document.getElementById("winRate").innerText =
+winRate.toFixed(1) + "%";
+
+document.getElementById("totalPL").innerText =
+"₹" + totalPL.toFixed(2);
+
+}
+
+
+// BACKUP
+
+function backupTrades(){
+
+if(trades.length === 0){
+
+alert("Backup करने के लिए कोई trade नहीं है।");
+
+return;
+
+}
+
+
+let data =
+JSON.stringify(trades,null,2);
+
+let blob =
+new Blob(
+[data],
+{type:"application/json"}
+);
+
+
+let url =
+URL.createObjectURL(blob);
+
+let a =
+document.createElement("a");
+
+a.href = url;
+
+a.download =
+"BR30-Trading-Journal-Backup.json";
+
+a.click();
+
+URL.revokeObjectURL(url);
+
+}
+
+
+// RESTORE
+
+function restoreTrades(event){
+
+let file =
+event.target.files[0];
+
+if(!file) return;
+
+
+let reader =
+new FileReader();
+
+
+reader.onload = function(e){
+
+try{
+
+let restored =
+JSON.parse(e.target.result);
+
+
+if(!Array.isArray(restored)){
+
+throw new Error();
+
+}
+
+
+trades = restored;
+
+saveData();
+
+displayTrades();
+
+alert(
+"✅ Trades successfully restore हो गए!"
+);
+
+}catch(error){
+
+alert(
+"❌ Backup file सही नहीं है।"
+);
+
+}
+
+};
+
+
+reader.readAsText(file);
+
+}
+
+
+// LOAD
+
+displayTrades();
+
+</script>
+
+</body>
+</html>
